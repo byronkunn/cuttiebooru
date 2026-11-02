@@ -27,9 +27,13 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser(req);
     const hidden = await hiddenMediaUrls(user?.id);
-    const visible = (folder: string) => listSfwSubfolder(folder).filter(
-      (url) => !hidden.has(url.replace(/^\/sfw\//, "/api/media/"))
-    );
+    const ownedUploads = user ? await prisma.upload.findMany({ where: { ownerId: user.id }, select: { filename: true } }) : [];
+    const owned = new Set(ownedUploads.map((upload) => upload.filename));
+    const visible = (folder: string) => listSfwSubfolder(folder).filter((url) => {
+      const filename = url.split("/").pop() || "";
+      return !hidden.has(url.replace(/^\/sfw\//, "/api/media/")) &&
+        (!/^upload_[a-f0-9-]+\./i.test(filename) || owned.has(filename));
+    });
     return safeJson({
       avatars: visible("avatar"),
       banners: visible("banner-image"),

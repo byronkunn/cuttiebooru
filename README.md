@@ -121,3 +121,9 @@ PLAYWRIGHT_BASE_URL=http://localhost:3000 E2E_BASE_URL=http://localhost:3000 npx
 ```
 
 These exercise 24 included/excluded search tags, 25 upload tags including a long name, keyword/tag submission from the home/profile/post/settings/comic headers, directory and comic filters, post-tag modal filters, both messenger searches and all three admin searches. Matching and no-match cases are checked where applicable. Native mobile keyboards, Safari/iOS zoom behavior and screen-reader interaction still require device/browser testing.
+
+## Local database setup
+
+The local SQLite database is no longer included in the repository. After setting `DATABASE_URL` in `.env`, run `npx prisma db push` to create it, then `npx tsx prisma/seed.ts` to initialize settings and tags. Back up any existing database before making schema changes. Existing deployments should keep their own database and media storage; removing the tracked copy does not migrate or erase them.
+
+A database was previously committed to public Git history. Removing the current copy does not remove historical copies. Treat any accounts, password hashes, session tokens and private messages in that database as exposed: revoke existing sessions and rotate affected passwords on any deployment that used those records. Review Git history cleanup and other copies separately.
