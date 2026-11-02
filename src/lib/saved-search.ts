@@ -31,8 +31,16 @@ export function savedSearchMatchesPost(
     name: tag.name.toLowerCase(),
     displayName: tag.displayName.toLowerCase(),
   }));
-  const includedTags = JSON.parse(search.includedTags) as string[];
-  const excludedTags = JSON.parse(search.excludedTags) as string[];
+  let includedTags: string[] = [];
+  let excludedTags: string[] = [];
+  try {
+    const p = JSON.parse(search.includedTags || "[]");
+    if (Array.isArray(p)) includedTags = p;
+  } catch {}
+  try {
+    const p = JSON.parse(search.excludedTags || "[]");
+    if (Array.isArray(p)) excludedTags = p;
+  } catch {}
 
   if (
     includedTags.some(

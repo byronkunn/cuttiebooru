@@ -11,7 +11,7 @@ export default function StandaloneMessengerPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
-  const [activePartnerId, setActivePartnerId] = useState("user_kitsune");
+  const [activePartnerId, setActivePartnerId] = useState("");
   const [lightTheme, setLightTheme] = useState(false);
 
   const loadMessengerData = useCallback(
@@ -22,8 +22,35 @@ export default function StandaloneMessengerPage() {
         if (res.ok) {
           setCurrentUser(data.currentUser);
           setActiveUserId(data.currentUser?.id || "");
-          setUsers(data.users || []);
+          const loadedUsers: User[] = data.users || [];
+          setUsers(loadedUsers);
           setMessages(data.messages || []);
+
+          // Check URL query param ?user=... or ?partner=...
+          if (typeof window !== "undefined") {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetParam = urlParams.get("user") || urlParams.get("partner");
+            if (targetParam) {
+              const cleanTarget = targetParam.toLowerCase().replace(/^@/, "");
+              const matched = loadedUsers.find(
+                (u) =>
+                  u.username.toLowerCase() === cleanTarget ||
+                  u.id === targetParam
+              );
+              if (matched) {
+                setActivePartnerId(matched.id);
+                return;
+              }
+            }
+          }
+
+          setActivePartnerId((prev) => {
+            if (prev && loadedUsers.some((u) => u.id === prev && u.id !== data.currentUser?.id)) {
+              return prev;
+            }
+            const firstOther = loadedUsers.find((u) => u.id !== data.currentUser?.id);
+            return firstOther ? firstOther.id : "";
+          });
         }
       } catch (err) {
         console.error("Failed to load messenger data:", err);

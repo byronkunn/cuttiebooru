@@ -102,7 +102,7 @@ export default function CuttiebooruApp() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   // Messaging Partner
-  const [activePartnerId, setActivePartnerId] = useState<string>("user_kitsune");
+  const [activePartnerId, setActivePartnerId] = useState<string>("");
 
   // Modals for Followers/Following & Twitter Edit Profile
   const [followModalState, setFollowModalState] = useState<{
@@ -369,10 +369,20 @@ export default function CuttiebooruApp() {
   const applySavedSearch = (savedSearch: SavedSearch) => {
     setSearchQuery(savedSearch.query);
     setAppliedQuery(savedSearch.query);
-    setIncludedTags(JSON.parse(savedSearch.includedTags) as string[]);
-    setAppliedIncludedTags(JSON.parse(savedSearch.includedTags) as string[]);
-    setExcludedTags(JSON.parse(savedSearch.excludedTags) as string[]);
-    setAppliedExcludedTags(JSON.parse(savedSearch.excludedTags) as string[]);
+    let inc: string[] = [];
+    let exc: string[] = [];
+    try {
+      const p = JSON.parse(savedSearch.includedTags || "[]");
+      if (Array.isArray(p)) inc = p;
+    } catch {}
+    try {
+      const p = JSON.parse(savedSearch.excludedTags || "[]");
+      if (Array.isArray(p)) exc = p;
+    } catch {}
+    setIncludedTags(inc);
+    setAppliedIncludedTags(inc);
+    setExcludedTags(exc);
+    setAppliedExcludedTags(exc);
     setSelectedMediaType(savedSearch.mediaType);
     setSelectedRating(savedSearch.rating);
     setCurrentPage(1);

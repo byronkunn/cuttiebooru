@@ -112,42 +112,44 @@ export function AlbumViewerModal({
         </div>
 
         {/* Creator Link Bar */}
-        <div className="px-6 py-3.5 border-b border-white/10 flex items-center justify-between bg-black/20 shrink-0">
-          <div
-            onClick={() => {
-              onClose();
-              onSelectCreator(album.creator);
-            }}
-            className="flex items-center gap-3 cursor-pointer group"
-          >
-            <img
-              src={album.creator.avatarUrl}
-              alt={album.creator.displayName}
-              className="w-9 h-9 rounded-full object-cover ring-2 ring-pink-500/40"
-            />
-            <div>
-              <span className="text-xs text-zinc-400 block">Curated by</span>
-              <span className="text-sm font-semibold group-hover:text-pink-400 transition-colors flex items-center gap-1">
-                {album.creator.displayName}
-                {album.creator.isVerified && (
-                  <BadgeCheck className="w-4 h-4 text-pink-400" />
-                )}
-              </span>
+        {album.creator && (
+          <div className="px-6 py-3.5 border-b border-white/10 flex items-center justify-between bg-black/20 shrink-0">
+            <div
+              onClick={() => {
+                onClose();
+                onSelectCreator(album.creator);
+              }}
+              className="flex items-center gap-3 cursor-pointer group"
+            >
+              <img
+                src={album.creator.avatarUrl || "/default-avatar.svg"}
+                alt={album.creator.displayName || "Creator"}
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-pink-500/40"
+              />
+              <div>
+                <span className="text-xs text-zinc-400 block">Curated by</span>
+                <span className="text-sm font-semibold group-hover:text-pink-400 transition-colors flex items-center gap-1">
+                  {album.creator.displayName}
+                  {album.creator.isVerified && (
+                    <BadgeCheck className="w-4 h-4 text-pink-400" />
+                  )}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onSelectCreator(album.creator);
-            }}
-            className="text-xs font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            View Creator Profile
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSelectCreator(album.creator);
+              }}
+              className="text-xs font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              View Creator Profile
+            </button>
+          </div>
+        )}
 
         {/* Grid of Album Contents */}
         <div className="p-6 overflow-y-auto flex-1">

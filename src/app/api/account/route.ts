@@ -92,9 +92,20 @@ export async function PATCH(req: NextRequest) {
         prisma.comicSeries.findMany({ where: { creatorId: user.id }, select: { coverUrl: true } }),
       ]);
       const mediaUrls = [
-        ...posts.flatMap((post) => [post.mediaUrl, post.thumbnailUrl, ...JSON.parse(post.galleryUrls) as string[]]),
-        ...albums.map((album) => album.coverUrl),
-        ...series.map((item) => item.coverUrl),
+        ...posts.flatMap((post) => {
+          let extra: string[] = [];
+          if (post.galleryUrls) {
+            try {
+              const parsed = JSON.parse(post.galleryUrls);
+              if (Array.isArray(parsed)) extra = parsed.filter((u): u is string => typeof u === "string");
+            } catch {
+              // ignore malformed JSON
+            }
+          }
+          return [post.mediaUrl, post.thumbnailUrl, ...extra].filter((u): u is string => Boolean(u));
+        }),
+        ...albums.map((album) => album.coverUrl).filter(Boolean),
+        ...series.map((item) => item.coverUrl).filter(Boolean),
       ];
       if (!mediaUrls.every(isHostedMediaUrl)) {
         return safeJson({ error: "Upload externally hosted media to this site before enabling protection; external URLs cannot be made private." }, { status: 400 });

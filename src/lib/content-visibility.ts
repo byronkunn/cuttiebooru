@@ -155,14 +155,31 @@ export async function hiddenMediaUrls(userId?: string) {
       select: { url: true },
     }),
   ]);
-  const urls = new Set([
-    ...posts.flatMap((post) => [post.mediaUrl, post.thumbnailUrl, ...JSON.parse(post.galleryUrls) as string[]]),
+  const rawUrls: string[] = [
+    ...posts.flatMap((post) => {
+      let gallery: string[] = [];
+      if (post.galleryUrls) {
+        try {
+          const parsed = JSON.parse(post.galleryUrls);
+          if (Array.isArray(parsed)) gallery = parsed.filter((u): u is string => typeof u === "string");
+        } catch {
+          // ignore malformed JSON
+        }
+      }
+      return [post.mediaUrl, post.thumbnailUrl, ...gallery];
+    }),
     ...albums.map((album) => album.coverUrl),
     ...series.map((item) => item.coverUrl),
     ...pages.map((page) => page.url),
     ...messages.map((message) => message.mediaUrl),
     ...drafts.map((page) => page.url),
-  ].map((url) => url.replace(/^\/sfw\//, "/api/media/")));
+  ];
+
+  const urls = new Set(
+    rawUrls
+      .filter((url): url is string => typeof url === "string" && url.trim().length > 0)
+      .map((url) => url.replace(/^\/sfw\//, "/api/media/"))
+  );
   for (const upload of uploads) {
     for (const folder of ["image", "video", "avatar", "banner-image"]) {
       urls.add(`/api/media/${folder}/${upload.filename}`);

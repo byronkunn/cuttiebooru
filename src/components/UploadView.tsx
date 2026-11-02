@@ -931,7 +931,13 @@ export function UploadView({
                     onChange={(e) => setCreatorId(e.target.value)}
                     className="w-full px-3.5 py-2 rounded-xl bg-black/40 border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-pink-500"
                   >
-                    {users.filter((u) => u.id === currentUser?.id).map((u) => (
+                    {(currentUser
+                      ? [
+                          currentUser,
+                          ...users.filter((u) => u.id !== currentUser.id && u.id === currentUser.id),
+                        ]
+                      : users
+                    ).map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.displayName} (@{u.username})
                         {u.id === currentUser?.id ? " — Signed In" : ""}

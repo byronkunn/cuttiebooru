@@ -233,9 +233,25 @@ export function ImageViewerModal({
                   <img
                     src={activeImageUrl}
                     alt={post.title}
+                    onClick={() => {
+                      if (galleryList.length > 1 && activeGalleryIdx < galleryList.length - 1) {
+                        setActiveGalleryIdx((prev) => prev + 1);
+                      } else if (nextPost) {
+                        onSelectPost(nextPost);
+                      } else if (galleryList.length > 1) {
+                        setActiveGalleryIdx(0);
+                      }
+                    }}
                     className={`max-h-[62vh] w-auto max-w-full rounded-xl object-contain shadow-2xl transition-all ${
                       isPlayingVideo ? "ring-2 ring-pink-500 brightness-110" : ""
-                    }`}
+                    } ${galleryList.length > 1 || nextPost ? "cursor-pointer hover:opacity-95" : ""}`}
+                    title={
+                      galleryList.length > 1 && activeGalleryIdx < galleryList.length - 1
+                        ? "Click to view next image in gallery"
+                        : nextPost
+                        ? `Click to view next post: "${nextPost.title}"`
+                        : post.title
+                    }
                   />
                 )}
               </div>

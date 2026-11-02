@@ -436,7 +436,23 @@ export default function PostDetailPage() {
                 <img
                   src={activeMediaUrl}
                   alt={post.title}
-                  className="w-full max-h-[75vh] object-contain select-none"
+                  onClick={() => {
+                    if (galleryList.length > 1) {
+                      setActiveGalleryIdx((prev) => (prev + 1) % galleryList.length);
+                    } else if (relatedPosts.length > 0) {
+                      router.push(`/post/${relatedPosts[0].id}`);
+                    }
+                  }}
+                  className={`w-full max-h-[75vh] object-contain select-none ${
+                    galleryList.length > 1 || relatedPosts.length > 0 ? "cursor-pointer hover:opacity-95" : ""
+                  }`}
+                  title={
+                    galleryList.length > 1
+                      ? "Click to view next image in gallery"
+                      : relatedPosts.length > 0
+                      ? `Click to view related artwork: "${relatedPosts[0].title}"`
+                      : post.title
+                  }
                 />
               )}
 
