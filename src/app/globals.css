@@ -3,25 +3,176 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #0f1016;
+  --bg-secondary: #171923;
+  --bg-card: #1d202d;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-pink: #f43f8e;
+  --accent-lavender: #a855f7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 1. Dark Charcoal Theme (Default) */
+body.theme-dark,
+body:not([class*="theme-"]) {
+  --bg-primary: #0f1016;
+  --bg-secondary: #171923;
+  --bg-card: #1d202d;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  background-color: #0f1016;
+  color: #f8fafc;
+}
+
+/* 2. Light Sakura Blossom Theme (Ultra-readable text & contrast) */
+body.theme-sakura,
+body.light-theme {
+  --bg-primary: #faf7fc;
+  --bg-secondary: #f3edf7;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-muted: #475569;
+  background-color: #faf7fc;
+  color: #0f172a;
+}
+
+/* High contrast readability overrides for light theme */
+body.theme-sakura a,
+body.light-theme a,
+body.theme-sakura button,
+body.light-theme button {
+  letter-spacing: 0.01em;
+}
+
+/* 3. Midnight AMOLED Theme */
+body.theme-amoled {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0d;
+  --bg-card: #121216;
+  --text-primary: #ffffff;
+  --text-muted: #a1a1aa;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+/* 4. Cyberpunk Neon Theme */
+body.theme-cyberpunk {
+  --bg-primary: #090a18;
+  --bg-secondary: #11142a;
+  --bg-card: #181c3a;
+  --text-primary: #ffffff;
+  --text-muted: #94a3b8;
+  background-color: #090a18;
+  color: #ffffff;
+}
+
+/* 5. Zen Matcha Botanical Theme */
+body.theme-matcha {
+  --bg-primary: #0a130f;
+  --bg-secondary: #111f19;
+  --bg-card: #172a23;
+  --text-primary: #f0fdf4;
+  --text-muted: #86a896;
+  background-color: #0a130f;
+  color: #f0fdf4;
+}
+
+/* 6. Sunset Ember Theme */
+body.theme-sunset {
+  --bg-primary: #150d1b;
+  --bg-secondary: #22142d;
+  --bg-card: #2e1b3d;
+  --text-primary: #fff7ed;
+  --text-muted: #fdba74;
+  background-color: #150d1b;
+  color: #fff7ed;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* Existing neutral utility surfaces share the selected palette across routed pages. */
+body[class*="theme-"]:not(.theme-dark) :is([class*="bg-[#0f1016]"], [class*="bg-[#faf7fc]"], [class*="bg-[#f8f5fc]"]) {
+  background-color: var(--bg-primary);
+}
+
+body[class*="theme-"]:not(.theme-dark) :is(
+  [class*="bg-[#090b10]"], [class*="bg-[#0c0e16]"], [class*="bg-[#0d0f17]"],
+  [class*="bg-[#0d0f18]"], [class*="bg-[#11131c]"], [class*="bg-[#12141d]"],
+  [class*="bg-[#121521]"], [class*="bg-[#13151f]"], [class*="bg-[#131520]"],
+  [class*="bg-[#141622]"], [class*="bg-[#141624]"], [class*="bg-[#141826]"],
+  [class*="bg-[#151722]"], [class*="bg-[#151724]"], [class*="bg-[#151826]"]
+) {
+  background-color: var(--bg-secondary);
+}
+
+body[class*="theme-"]:not(.theme-dark) :is(
+  [class*="bg-[#161822]"], [class*="bg-[#161825]"], [class*="bg-[#171925]"],
+  [class*="bg-[#181a24]"], [class*="bg-[#181b28]"], [class*="bg-[#191c2b]"],
+  [class*="bg-[#1a1d2b]"], [class*="bg-[#1a1d2d]"], [class*="bg-[#1a1e2e]"],
+  [class*="bg-[#1b1e2b]"], [class*="bg-[#1b1e2e]"], [class*="bg-[#1b1f30]"],
+  [class*="bg-[#1c1f2e]"], [class*="bg-[#1c2033]"]
+) {
+  background-color: var(--bg-card);
+}
+
+/* Keep white text on media overlays and colored action buttons. */
+body.theme-sakura :is(.text-zinc-100, .text-zinc-200, .text-zinc-300, .text-white):not(
+  [class*="bg-black/"], [class*="bg-black/"] *,
+  [class*="bg-gradient-"], [class*="bg-gradient-"] *,
+  .bg-pink-500, .bg-pink-500 *, .bg-pink-600, .bg-pink-600 *,
+  .bg-purple-600, .bg-purple-600 *,
+  .bg-rose-600, .bg-rose-600 *
+) {
+  color: var(--text-primary);
+}
+
+body.theme-sakura :is(.text-zinc-400, .text-zinc-500, .text-slate-400) {
+  color: var(--text-muted);
+}
+
+body.theme-sakura :is([class*="border-white/"], [class*="border-white["]) {
+  border-color: #d8cfe1;
+}
+
+body.theme-cyberpunk { --accent-pink: #06b6d4; --accent-lavender: #e879f9; }
+body.theme-matcha { --accent-pink: #10b981; --accent-lavender: #84cc16; }
+body.theme-sunset { --accent-pink: #f97316; --accent-lavender: #fbbf24; }
+body.theme-sakura { --accent-pink: #be185d; --accent-lavender: #7e22ce; }
+
+body[class*="theme-"] :is(.text-pink-300, .text-pink-400, .text-pink-500) {
+  color: var(--accent-pink);
+}
+
+body[class*="theme-"] .bg-pink-500 { background-color: var(--accent-pink); }
+body[class*="theme-"] .border-pink-500 { border-color: var(--accent-pink); }
+body[class*="theme-"] .from-pink-500 {
+  --tw-gradient-from: var(--accent-pink) var(--tw-gradient-from-position);
+  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+body[class*="theme-"] .to-purple-600 {
+  --tw-gradient-to: var(--accent-lavender) var(--tw-gradient-to-position);
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 16, 22, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 142, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 142, 0.65);
 }

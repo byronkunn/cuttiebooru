@@ -1,0 +1,415 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  username        String   @unique
+  displayName     String
+  email           String?  @unique
+  bio             String   @default("")
+  avatarUrl       String
+  headerUrl       String   @default("")
+  websiteUrl      String   @default("")
+  socialLinks     String   @default("{}") // JSON string: { twitter, instagram, booth, patreon }
+  niche           String   @default("Cute Character Art")
+  isCreator       Boolean  @default(true)
+  isVerified      Boolean  @default(false)
+  isModerator     Boolean  @default(false)
+  role            String   @default("creator") // "admin" | "moderator" | "creator" | "user"
+  isBanned        Boolean  @default(false)
+  passwordHash    String   @default("!disabled")
+  featured        Boolean  @default(false)
+  spotlightQuote  String   @default("")
+  notifyFollows   Boolean  @default(true)
+  notifyFavorites Boolean  @default(true)
+  privateProfile  Boolean  @default(false)
+  showCollections Boolean  @default(true)
+  showFavorites   Boolean  @default(true)
+  allowDMs        String   @default("everyone") // "everyone" | "followers" | "none"
+  createdAt       DateTime @default(now())
+
+  createdPosts           Post[]            @relation("CreatorPosts")
+  uploadedPosts          Post[]            @relation("UploaderPosts")
+  albums                 Album[]
+  favorites              Favorite[]
+  comments               Comment[]
+  collections            Collection[]
+  savedInItems           CollectionItem[]  @relation("SavedCreator")
+  followers              Follow[]          @relation("Following")
+  following              Follow[]          @relation("Follower")
+  reportsSubmitted       Report[]          @relation("Reporter")
+  reportsReceived        Report[]          @relation("ReportedUser")
+  tagSuggestions         TagSuggestion[]
+  sentMessages           DirectMessage[]   @relation("SentMessages")
+  receivedMessages       DirectMessage[]   @relation("ReceivedMessages")
+  notificationsReceived  Notification[]    @relation("NotificationRecipient")
+  notificationsTriggered Notification[]    @relation("NotificationActor")
+  savedSearches          SavedSearch[]
+  comicSeries            ComicSeries[]
+  comicFollows           ComicFollow[]
+  readingProgress        ReadingProgress[]
+  chapterComments        ChapterComment[]
+  sessions               Session[]
+  uploads                Upload[]
+}
+
+model Upload {
+  id        String   @id @default(cuid())
+  filename  String   @unique
+  ownerId   String
+  kind      String
+  createdAt DateTime @default(now())
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  tokenHash String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  identifier String
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+}
+
+model ComicSeries {
+  id          String            @id @default(cuid())
+  title       String
+  description String            @default("")
+  coverUrl    String
+  genres      String            @default("")
+  tags        String            @default("")
+  direction   String            @default("rtl")
+  status      String            @default("ongoing")
+  creatorId   String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  creator     User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  chapters    ComicChapter[]
+  follows     ComicFollow[]
+  progress    ReadingProgress[]
+}
+
+model ComicChapter {
+  id          String            @id @default(cuid())
+  seriesId    String
+  title       String
+  number      Int
+  published   Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  publishedAt DateTime?
+  series      ComicSeries       @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  pages       ComicPage[]
+  progress    ReadingProgress[]
+  comments    ChapterComment[]
+
+  @@unique([seriesId, number])
+}
+
+model ComicPage {
+  id        String       @id @default(cuid())
+  chapterId String
+  position  Int
+  url       String
+  chapter   ComicChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([chapterId, position])
+}
+
+model ComicFollow {
+  id       String      @id @default(cuid())
+  seriesId String
+  userId   String
+  series   ComicSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, userId])
+}
+
+model ReadingProgress {
+  id        String       @id @default(cuid())
+  seriesId  String
+  chapterId String
+  userId    String
+  page      Int          @default(0)
+  updatedAt DateTime     @updatedAt
+  series    ComicSeries  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  chapter   ComicChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, userId])
+}
+
+model ChapterComment {
+  id        String   @id @default(cuid())
+  chapterId String
+  authorId  String
+  content   String
+  reaction  String   @default("")
+  createdAt DateTime @default(now())
+
+  chapter ComicChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  author  User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Album {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  coverUrl    String
+  category    String   @default("Cosplay")
+  creatorId   String
+  createdAt   DateTime @default(now())
+
+  creator         User             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  posts           Post[]
+  collectionItems CollectionItem[]
+}
+
+model Post {
+  id                  String   @id @default(cuid())
+  title               String
+  description         String   @default("")
+  mediaUrl            String
+  thumbnailUrl        String
+  galleryUrls         String   @default("[]") // JSON array of additional image URLs for multi-file posts
+  filesCount          Int      @default(1)
+  mediaType           String   @default("image") // "image" | "video"
+  videoDuration       String   @default("")
+  aspectRatio         String   @default("portrait") // "portrait" | "square" | "landscape"
+  category            String   @default("Cute Art") // "Cosplay" | "Cute Art" | "Photography" | "Indie"
+  rating              String   @default("sfw") // "sfw" | "questionable" | "explicit"
+  sourceUrl           String   @default("")
+  attribution         String   @default("")
+  permissionConfirmed Boolean  @default(true)
+  views               Int      @default(0)
+  featured            Boolean  @default(false)
+  creatorId           String
+  uploaderId          String
+  albumId             String?
+  createdAt           DateTime @default(now())
+
+  creator         User             @relation("CreatorPosts", fields: [creatorId], references: [id], onDelete: Cascade)
+  uploader        User             @relation("UploaderPosts", fields: [uploaderId], references: [id], onDelete: Cascade)
+  album           Album?           @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  tags            PostTag[]
+  favorites       Favorite[]
+  comments        Comment[]
+  collectionItems CollectionItem[]
+  reports         Report[]
+  tagSuggestions  TagSuggestion[]
+  notifications   Notification[]
+
+  @@index([createdAt])
+  @@index([creatorId, createdAt])
+  @@index([albumId, createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique // normalized e.g. "magical_girl"
+  displayName String // e.g. "Magical Girl"
+  category    String   @default("general") // franchise | character | genre | clothing | pose | activity | appearance | anatomy | setting | content | meta | general
+  description String   @default("")
+  usageCount  Int      @default(0)
+  trending    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  posts PostTag[]
+}
+
+model PostTag {
+  id     String @id @default(cuid())
+  postId String
+  tagId  String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+}
+
+model TagSuggestion {
+  id            String   @id @default(cuid())
+  postId        String
+  tagName       String
+  tagCategory   String   @default("general")
+  suggestedById String
+  status        String   @default("pending") // "pending" | "approved" | "rejected"
+  createdAt     DateTime @default(now())
+
+  post        Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  suggestedBy User @relation(fields: [suggestedById], references: [id], onDelete: Cascade)
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  approved    Boolean  @default(false)
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  coverUrl    String   @default("")
+  isPublic    Boolean  @default(false)
+  isCurated   Boolean  @default(false)
+  badgeText   String   @default("")
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  owner User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items CollectionItem[]
+}
+
+model CollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  postId       String?
+  albumId      String?
+  creatorId    String?
+  orderIndex   Int      @default(0)
+  addedAt      DateTime @default(now())
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  post       Post?      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  album      Album?     @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  creator    User?      @relation("SavedCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id             String   @id @default(cuid())
+  targetType     String   @default("post") // "post" | "profile" | "removal_request"
+  postId         String?
+  reportedUserId String?
+  reporterId     String?
+  reason         String // "attribution_missing" | "copyright_removal" | "guidelines_violation" | "misleading_tags"
+  details        String   @default("")
+  contactEmail   String   @default("")
+  status         String   @default("open") // "open" | "resolved" | "dismissed"
+  createdAt      DateTime @default(now())
+
+  post         Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+  reportedUser User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  reporter     User? @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+}
+
+model SearchLog {
+  id           String   @id @default(cuid())
+  query        String
+  resultsCount Int
+  createdAt    DateTime @default(now())
+}
+
+model SavedSearch {
+  id            String   @id @default(cuid())
+  ownerId       String
+  name          String
+  query         String   @default("")
+  includedTags  String   @default("[]")
+  excludedTags  String   @default("[]")
+  mediaType     String   @default("all")
+  rating        String   @default("all")
+  alertsEnabled Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
+  @@index([alertsEnabled])
+}
+
+model DirectMessage {
+  id              String   @id @default(cuid())
+  senderId        String
+  receiverId      String
+  text            String   @default("")
+  mediaUrl        String   @default("")
+  mediaType       String   @default("") // "" | "image" | "video" | "voice" | "sticker"
+  mediaDuration   String   @default("") // e.g. "0:14" for voice or video
+  replyToId       String?
+  forwardedFromId String?
+  reactions       String   @default("{}") // JSON object: { "❤️": ["user_hana"], "🔥": ["user_kitsune"] }
+  isPinned        Boolean  @default(false)
+  isEdited        Boolean  @default(false)
+  isRead          Boolean  @default(false)
+  selfDestructSec Int      @default(0) // 0 = off, >0 = timer in seconds
+  createdAt       DateTime @default(now())
+
+  sender   User            @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User            @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  replyTo  DirectMessage?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies  DirectMessage[] @relation("MessageReplies")
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  recipientId   String
+  actorId       String
+  type          String // "like" | "follow" | "mention" | "collection_save" | "tag_approved" | "message"
+  postId        String?
+  comicSeriesId String?
+  text          String   @default("")
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User  @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  post      Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+}
+
+model SiteSetting {
+  id                    String   @id @default("global")
+  siteName              String   @default("Cuttiebooru")
+  allow18Plus           Boolean  @default(true)
+  requireAgeGate        Boolean  @default(false)
+  blurExplicitByDefault Boolean  @default(false)
+  openUploads           Boolean  @default(true)
+  announcementBanner    String   @default("")
+  maintenanceMode       Boolean  @default(false)
+  updatedAt             DateTime @updatedAt
+}
