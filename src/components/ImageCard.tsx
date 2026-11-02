@@ -41,6 +41,17 @@ export function ImageCard({
   return (
     <div
       onClick={() => onSelectPost(post)}
+      onMouseEnter={() => {
+        if (isVideo && videoRef.current) {
+          videoRef.current.play().catch(() => {});
+        }
+      }}
+      onMouseLeave={() => {
+        if (isVideo && videoRef.current) {
+          videoRef.current.pause();
+          videoRef.current.currentTime = 0;
+        }
+      }}
       className={`group relative flex flex-col rounded-2xl overflow-hidden border transition-all duration-300 cursor-pointer ${
         lightTheme
           ? "bg-white border-purple-200/80 hover:border-pink-400 shadow-sm hover:shadow-xl hover:shadow-pink-500/10"

@@ -35,9 +35,10 @@ export function AlbumViewerModal({
 }: AlbumViewerModalProps) {
   if (!album) return null;
 
-  const albumPosts = allPosts.filter((p) => p.albumId === album.id);
   const displayPosts =
-    albumPosts.length > 0 ? albumPosts : album.posts || [];
+    album.posts && album.posts.length > 0
+      ? album.posts
+      : allPosts.filter((p) => p.albumId === album.id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
@@ -169,6 +170,11 @@ export function AlbumViewerModal({
                   post.mediaUrl?.toLowerCase().endsWith(".mp4") ? (
                     <video
                       src={post.mediaUrl}
+                      poster={
+                        post.thumbnailUrl && !post.thumbnailUrl.endsWith(".mp4")
+                          ? post.thumbnailUrl
+                          : undefined
+                      }
                       muted
                       loop
                       playsInline
