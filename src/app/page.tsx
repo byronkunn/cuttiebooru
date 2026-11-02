@@ -69,6 +69,7 @@ import { CollectionsView } from "@/components/CollectionsView";
 import { MessagesView } from "@/components/MessagesView";
 import { NotificationsView } from "@/components/NotificationsView";
 import { FollowListModal } from "@/components/FollowListModal";
+import { FollowingManagerModal } from "@/components/FollowingManagerModal";
 import { TwitterEditProfileModal } from "@/components/TwitterEditProfileModal";
 
 type NavSection =
@@ -167,6 +168,7 @@ export default function CuttiebooruApp() {
   const [railOpen, setRailOpen] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showAppearanceModal, setShowAppearanceModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [currentTheme, setCurrentTheme] = useState("dark");
 
   const handleSignOut = async () => {
@@ -1409,6 +1411,20 @@ export default function CuttiebooruApp() {
               </a>
             )}
 
+            {/* Following Subscriptions Button (Opens Following Manager Modal) */}
+            <button
+              type="button"
+              onClick={() => setShowFollowingModal(true)}
+              title="Manage Followed Tags & Creators"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all shadow-sm"
+            >
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span className="hidden md:inline">Following</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-200 font-extrabold">
+                {followingIds.length + followedTagNames.length}
+              </span>
+            </button>
+
             {/* Site Appearance Themes Button (Opens Theme Picker Modal) */}
             <button
               type="button"
@@ -2057,6 +2073,24 @@ export default function CuttiebooruApp() {
                             {t.label}
                           </button>
                         ))}
+
+                        {/* Dedicated Manage Following Modal Link */}
+                        <button
+                          type="button"
+                          onClick={() => setShowFollowingModal(true)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap border shrink-0 ${
+                            feedTab === "following"
+                              ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
+                              : "bg-white/5 text-zinc-400 hover:text-amber-300 border-white/10 hover:border-amber-500/30"
+                          }`}
+                          title="Open Following & Subscriptions modal"
+                        >
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <span>Manage Following</span>
+                          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-200">
+                            {followingIds.length + followedTagNames.length}
+                          </span>
+                        </button>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
@@ -2339,6 +2373,16 @@ export default function CuttiebooruApp() {
                             </button>
                           </div>
                         ))}
+
+                        <button
+                          type="button"
+                          onClick={() => setShowFollowingModal(true)}
+                          className="px-2.5 py-1 rounded-xl text-xs font-bold text-amber-400 hover:text-white hover:bg-amber-500/20 border border-amber-500/30 flex items-center gap-1 transition-all ml-auto shrink-0"
+                          title="Manage followed tags and creators"
+                        >
+                          <Star className="w-3 h-3 fill-amber-400" />
+                          <span>Manage all...</span>
+                        </button>
                       </div>
                     )}
 
@@ -3512,6 +3556,23 @@ export default function CuttiebooruApp() {
               <button
                 type="button"
                 onClick={() => {
+                  setShowAvatarModal(false);
+                  setShowFollowingModal(true);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-white/5 text-zinc-300 hover:text-white transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span>Following (Tags & People)</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300">
+                  {followingIds.length + followedTagNames.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
                   setViewingCreator(null);
                   setActiveNav("collections");
                   setShowAvatarModal(false);
@@ -3768,6 +3829,30 @@ export default function CuttiebooruApp() {
         onClose={() => setFollowModalState(null)}
         onSelectUser={(u) => setViewingCreator(u)}
         onToggleFollow={handleToggleFollow}
+        onStartMessage={handleStartMessageWithUser}
+      />
+
+      <FollowingManagerModal
+        isOpen={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        currentUser={currentUser}
+        users={users}
+        tags={tags}
+        followingIds={followingIds}
+        followedTagNames={followedTagNames}
+        lightTheme={lightTheme}
+        onToggleFollowCreator={handleToggleFollow}
+        onToggleFollowTag={handleToggleFollowTag}
+        onSelectTag={(tagName) => {
+          setIncludedTags([tagName]);
+          setExcludedTags([]);
+          setSearchQuery("");
+          handleApplySearch("", [tagName], []);
+          setActiveNav("home");
+        }}
+        onSelectCreator={(creator) => {
+          handleOpenCreator(creator);
+        }}
         onStartMessage={handleStartMessageWithUser}
       />
 
