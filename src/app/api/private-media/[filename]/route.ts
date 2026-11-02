@@ -5,7 +5,7 @@ import { Readable } from "stream";
 import path from "path";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-import { canViewMediaUrls, visibleCreatorWhere } from "@/lib/content-visibility";
+import { visibleCreatorWhere } from "@/lib/content-visibility";
 
 export const dynamic = "force-dynamic";
 const types: Record<string, string> = { ".jpg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp", ".mp4": "video/mp4", ".webm": "video/webm" };
@@ -16,7 +16,6 @@ export async function GET(req: NextRequest, { params }: { params: { filename: st
   if (!upload) return new NextResponse(null, { status: 404 });
   const user = await getSessionUser(req);
   const url = `/api/private-media/${filename}`;
-  if (!await canViewMediaUrls([url], user?.id)) return new NextResponse(null, { status: 404 });
   const owner = user?.id === upload.ownerId;
   let allowed = owner;
   if (!allowed && upload.kind === "comic") allowed = !!(await prisma.comicPage.findFirst({ where: { url, chapter: { published: true, series: { creator: { is: visibleCreatorWhere(user?.id) } } } }, select: { id: true } }));
