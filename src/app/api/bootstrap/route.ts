@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
       searchLogs,
       totalPosts,
       siteSetting,
+      tagFollows,
     ] = await Promise.all([
       prisma.user.findMany({
         include: {
@@ -162,6 +163,12 @@ export async function GET(req: NextRequest) {
       }) : Promise.resolve([]),
       prisma.post.count(),
       prisma.siteSetting.findUnique({ where: { id: "global" } }),
+      activeUserId !== "__anonymous__"
+        ? prisma.tagFollow.findMany({
+            where: { userId: activeUserId },
+            include: { tag: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const currentUser =
@@ -181,6 +188,7 @@ export async function GET(req: NextRequest) {
       collections,
       userFavoritePostIds: favorites.map((f) => f.postId),
       userFollowingIds: follows.map((f) => f.followingId),
+      userFollowedTagNames: tagFollows.map((tf) => tf.tag.name),
       allFollows,
       messages,
       notifications,

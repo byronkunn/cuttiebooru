@@ -603,11 +603,18 @@ async function main() {
   await prisma.directMessage.deleteMany({});
   await prisma.notification.deleteMany({ where: { type: "message" } });
 
+  const userByron = (await prisma.user.findUnique({ where: { username: "byron" } }))!;
+  const userSakura = (await prisma.user.findUnique({ where: { username: "sakura" } }))!;
+  const userLuna = (await prisma.user.findUnique({ where: { username: "luna" } }))!;
+  const userHana = (await prisma.user.findUnique({ where: { username: "hana" } }))!;
+
   const m1_sakura = await prisma.directMessage.create({
     data: {
       senderId: userSakura.id,
       receiverId: userByron.id,
-      text: "Hey Byron! The new Booru layout and theme switcher are awesome! I just finished organizing the Enchanted Starlight Chronicles album.",
+      text: "Hey Byron! The new Booru layout and theme switcher are awesome! Here is the latest character artwork I finished for the Enchanted Starlight collection:",
+      mediaUrl: "/sfw/image/148a0f0eae39998a954d56c2290dc65e.png",
+      mediaType: "image",
       isRead: true,
       createdAt: new Date(now - 1000 * 60 * 120),
     },
@@ -616,7 +623,10 @@ async function main() {
     data: {
       senderId: userSakura.id,
       receiverId: userByron.id,
-      text: "Quick question: what video aspect ratio works best for loop animations on the mobile feed? Planning the next scene now!",
+      text: "And here is a test preview of the animation loop! Does the video bitrate look good on your end?",
+      mediaUrl: "/sfw/video/18a140f0b65bb1dfa2b7aeaff6fc366e.mp4",
+      mediaType: "video",
+      mediaDuration: "0:14",
       isRead: true,
       createdAt: new Date(now - 1000 * 60 * 60),
     },
@@ -625,7 +635,9 @@ async function main() {
     data: {
       senderId: userByron.id,
       receiverId: userSakura.id,
-      text: "Hey Sakura! 4:5 or 1:1 works best for feed thumbnails, and 9:16 vertical looks incredible when opened fullscreen. Excited to see what you create next!",
+      text: "Hey Sakura! The animation runs silky smooth at 60fps! 4:5 or 1:1 works best for feed thumbnails, and 9:16 vertical looks incredible fullscreen.",
+      mediaUrl: "/sfw/image/401429168df44a34b0acf9ee0da34369.png",
+      mediaType: "image",
       isRead: true,
       replyToId: m2_sakura.id,
       createdAt: new Date(now - 1000 * 60 * 30),
@@ -646,7 +658,9 @@ async function main() {
     data: {
       senderId: userLuna.id,
       receiverId: userByron.id,
-      text: "Hi Admin Byron! Thank you so much for featuring my cosplay work in the Heroines & Cosplay Showcase album! The presentation looks super sleek.",
+      text: "Hi Admin Byron! Thank you so much for featuring my cosplay work in the Heroines & Cosplay Showcase album! Here's the studio shot:",
+      mediaUrl: "/sfw/image/avetetsuya-studios-271773445-103012065615905-9196945532505041529-n.jpg",
+      mediaType: "image",
       isRead: true,
       createdAt: new Date(now - 1000 * 60 * 180),
     },
@@ -655,7 +669,10 @@ async function main() {
     data: {
       senderId: userLuna.id,
       receiverId: userByron.id,
-      text: "I'm setting up a new Cyberpunk studio shoot next week. If you ever need high-res assets or featured photos for site promo banners, just let me know!",
+      text: "Also check out this test footage from our nighttime neon shoot with the LED visor prop:",
+      mediaUrl: "/sfw/video/1face9fa56fedfdaf2a600710e3ab977.mp4",
+      mediaType: "video",
+      mediaDuration: "0:12",
       isRead: true,
       createdAt: new Date(now - 1000 * 60 * 120),
     },
@@ -664,7 +681,7 @@ async function main() {
     data: {
       senderId: userByron.id,
       receiverId: userLuna.id,
-      text: "Hey Luna! Your props and lighting are top tier. Cyberpunk always trends really well with our community—feel free to upload full resolution whenever you're ready!",
+      text: "Hey Luna! That lighting is top tier. Cyberpunk aesthetics always trend really well with our community—feel free to upload full resolution whenever you're ready!",
       isRead: true,
       replyToId: m2_luna.id,
       createdAt: new Date(now - 1000 * 60 * 60),
@@ -685,7 +702,9 @@ async function main() {
     data: {
       senderId: userHana.id,
       receiverId: userByron.id,
-      text: "Hello Byron! I published the first 2 chapters of 'Whispers of the Cherry Grove' on the Manga Reader. The right-to-left reader direction works like a charm!",
+      text: "Hello Byron! I published chapters 1 and 2 of 'Whispers of the Cherry Grove' on the Manga Reader. Here is the color splash art:",
+      mediaUrl: "/sfw/image/sample_2ccb3796c550e474c5162e781392f1aa.jpg",
+      mediaType: "image",
       isRead: true,
       createdAt: new Date(now - 1000 * 60 * 240),
     },
@@ -694,7 +713,9 @@ async function main() {
     data: {
       senderId: userHana.id,
       receiverId: userByron.id,
-      text: "Could you check if the cover art looks crisp on the homepage? Also wondering if creators will have the ability to schedule chapter drops in advance?",
+      text: "And here is the coffee shop watercolor illustration for chapter 3! Could you check if the colors look right on the high-DPI displays?",
+      mediaUrl: "/sfw/image/sample_121c05247147e27e187ec21d4903d42e.jpg",
+      mediaType: "image",
       isRead: true,
       createdAt: new Date(now - 1000 * 60 * 120),
     },
@@ -703,7 +724,7 @@ async function main() {
     data: {
       senderId: userByron.id,
       receiverId: userHana.id,
-      text: "Hi Hana! The cover looks gorgeous, and chapter 2 loaded smoothly on all devices. Scheduling is definitely on the roadmap for the studio tools!",
+      text: "Hi Hana! The watercolor textures look stunning and vibrant on Retina displays. The Manga Reader handles the RTL pages beautifully!",
       isRead: true,
       replyToId: m2_hana.id,
       createdAt: new Date(now - 1000 * 60 * 50),
@@ -719,6 +740,18 @@ async function main() {
       createdAt: new Date(now - 1000 * 60 * 15),
     },
   });
+
+  // Seed sample tag follows for Byron
+  for (const tName of ["fantasy", "cosplay", "cyberpunk"]) {
+    const t = await prisma.tag.findUnique({ where: { name: tName } });
+    if (t) {
+      await prisma.tagFollow.upsert({
+        where: { userId_tagId: { userId: userByron.id, tagId: t.id } },
+        update: {},
+        create: { userId: userByron.id, tagId: t.id },
+      });
+    }
+  }
 
   await prisma.notification.createMany({
     data: [

@@ -57,6 +57,7 @@ model User {
   chapterComments        ChapterComment[]
   sessions               Session[]
   uploads                Upload[]
+  tagFollows             TagFollow[]
 }
 
 model Upload {
@@ -240,7 +241,22 @@ model Tag {
   trending    Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  posts PostTag[]
+  posts     PostTag[]
+  followers TagFollow[]
+}
+
+model TagFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tagId])
+  @@index([userId])
+  @@index([tagId])
 }
 
 model PostTag {

@@ -66,11 +66,20 @@ export async function GET(req: NextRequest) {
     ];
 
     let followedIds: string[] = [];
+    let followedTagIds: string[] = [];
     if (tab === "following") {
-      const follows = await prisma.follow.findMany({
-        where: { followerId: userId, approved: true },
-      });
+      const [follows, tagFollows] = await Promise.all([
+        prisma.follow.findMany({
+          where: { followerId: userId, approved: true },
+          select: { followingId: true },
+        }),
+        prisma.tagFollow.findMany({
+          where: { userId },
+          select: { tagId: true },
+        }),
+      ]);
       followedIds = follows.map((f) => f.followingId);
+      followedTagIds = tagFollows.map((tf) => tf.tagId);
     }
 
     const filters: Prisma.PostWhereInput[] = [visiblePostWhere(sessionUser?.id)];
@@ -79,7 +88,20 @@ export async function GET(req: NextRequest) {
     if (mediaType !== "all") filters.push({ mediaType });
     if (rating !== "all") filters.push({ rating });
     if (tab === "following") {
-      filters.push({ creatorId: { in: followedIds } });
+      if (followedIds.length > 0 && followedTagIds.length > 0) {
+        filters.push({
+          OR: [
+            { creatorId: { in: followedIds } },
+            { tags: { some: { tagId: { in: followedTagIds } } } },
+          ],
+        });
+      } else if (followedIds.length > 0) {
+        filters.push({ creatorId: { in: followedIds } });
+      } else if (followedTagIds.length > 0) {
+        filters.push({ tags: { some: { tagId: { in: followedTagIds } } } });
+      } else {
+        filters.push({ creatorId: "__no_followed_content__" });
+      }
     } else if (creatorId) {
       filters.push({ creatorId });
     }

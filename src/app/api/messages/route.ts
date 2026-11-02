@@ -79,7 +79,14 @@ export async function POST(req: NextRequest) {
       if (recipient.allowDMs === "none") return forbidden();
       if (recipient.allowDMs === "followers" && !(await prisma.follow.findFirst({ where: { followerId: receiverId, followingId: userId, approved: true } }))) return forbidden();
       if (mediaUrl && typeof mediaUrl !== "string") return safeJson({ error: "Invalid attachment" }, { status: 400 });
-      if (mediaUrl && !mediaUrl.startsWith("/api/private-media/")) return safeJson({ error: "Message attachments must use private uploads" }, { status: 400 });
+      if (
+        mediaUrl &&
+        !mediaUrl.startsWith("/api/private-media/") &&
+        !mediaUrl.startsWith("/sfw/") &&
+        !mediaUrl.startsWith("/api/media/")
+      ) {
+        return safeJson({ error: "Message attachments must use private uploads or gallery media" }, { status: 400 });
+      }
 
       if (!receiverId || (!text.trim() && !mediaUrl && mediaType !== "voice")) {
         return safeJson(

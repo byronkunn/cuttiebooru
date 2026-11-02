@@ -1259,6 +1259,61 @@ export function MessagesView({
                   />
                 </div>
 
+                {/* Quick SFW Library Attachments */}
+                <div className="space-y-1.5 pt-1 border-t border-white/[0.08]">
+                  <span className="text-[11px] font-semibold text-zinc-400 block">
+                    Or select from Booru artwork & video library:
+                  </span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      {
+                        title: "Anime Art",
+                        url: "/sfw/image/148a0f0eae39998a954d56c2290dc65e.png",
+                        type: "image" as const,
+                      },
+                      {
+                        title: "Manga Art",
+                        url: "/sfw/image/sample_2ccb3796c550e474c5162e781392f1aa.jpg",
+                        type: "image" as const,
+                      },
+                      {
+                        title: "Video Loop",
+                        url: "/sfw/video/18a140f0b65bb1dfa2b7aeaff6fc366e.mp4",
+                        type: "video" as const,
+                        thumb: "/sfw/video/thumb_18a140f0b65bb1dfa2b7aeaff6fc366e.jpg",
+                      },
+                      {
+                        title: "Cosplay Clip",
+                        url: "/sfw/video/1face9fa56fedfdaf2a600710e3ab977.mp4",
+                        type: "video" as const,
+                        thumb: "/sfw/video/thumb_1face9fa56fedfdaf2a600710e3ab977.jpg",
+                      },
+                    ].map((sample) => (
+                      <button
+                        key={sample.url}
+                        type="button"
+                        onClick={() => {
+                          setAttachedUrl(sample.url);
+                          setAttachedType(sample.type);
+                          setAttachedDuration(sample.type === "video" ? "0:14" : "");
+                          setShowAttachMenu(false);
+                        }}
+                        className="group/sample relative aspect-video rounded-xl overflow-hidden border border-white/10 hover:border-pink-500 transition-all bg-black"
+                      >
+                        <img
+                          src={sample.thumb || sample.url}
+                          alt={sample.title}
+                          className="w-full h-full object-cover group-hover/sample:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-black/40 group-hover/sample:bg-black/20 flex items-end p-1">
+                          <span className="text-[9px] font-bold text-white truncate drop-shadow">
+                            {sample.title}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 

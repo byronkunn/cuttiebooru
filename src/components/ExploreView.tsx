@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Compass, Flame, Hash, Users } from "lucide-react";
+import { Compass, Flame, Hash, Users, Star } from "lucide-react";
 import { ImageCard } from "@/components/ImageCard";
 import type { Post, Tag, User } from "@/types/cuttiebooru";
 
@@ -18,6 +18,7 @@ interface ExploreViewProps {
   blurExplicit: boolean;
   favoritePostIds: string[];
   followingIds: string[];
+  followedTagNames?: string[];
   currentUserId?: string;
   onSelectPost: (post: Post) => void;
   onSelectCreator: (creator: User) => void;
@@ -25,6 +26,7 @@ interface ExploreViewProps {
   onToggleFavorite: (postId: string, event: React.MouseEvent) => void;
   onOpenSaveModal: (post: Post, event: React.MouseEvent) => void;
   onFollow: (creatorId: string) => void;
+  onToggleFollowTag?: (tagName: string, event: React.MouseEvent) => void;
 }
 
 export function ExploreView(props: ExploreViewProps) {
@@ -92,13 +94,40 @@ export function ExploreView(props: ExploreViewProps) {
               <h2 className="text-lg font-extrabold flex items-center gap-2"><Hash className="w-5 h-5 text-pink-400" />Trending tags</h2>
               {!data.tags.length ? <p className="text-sm text-zinc-400">No active tags in this period.</p> :
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {data.tags.map(({ tag, artworkCount }, index) => (
-                    <button key={tag.id} type="button" onClick={() => props.onSelectTag(tag.name)} className="min-w-0 p-3 rounded-xl text-left bg-white/5 hover:bg-pink-500/15">
-                      <span className="text-xs text-zinc-400">{index + 1} · {tag.category}</span>
-                      <span className="block font-bold truncate" title={`#${tag.name}`}>#{tag.name}</span>
-                      <span className="text-xs text-zinc-400">{artworkCount} artworks · Explore tag</span>
-                    </button>
-                  ))}
+                  {data.tags.map(({ tag, artworkCount }, index) => {
+                    const isFollowed = props.followedTagNames?.includes(tag.name);
+                    return (
+                      <div
+                        key={tag.id}
+                        onClick={() => props.onSelectTag(tag.name)}
+                        className="group relative min-w-0 p-3 rounded-xl text-left bg-white/5 hover:bg-pink-500/15 cursor-pointer flex items-center justify-between transition-colors"
+                      >
+                        <div className="min-w-0 flex-1 pr-2">
+                          <span className="text-xs text-zinc-400">{index + 1} · {tag.category}</span>
+                          <span className="block font-bold truncate text-white group-hover:text-pink-300" title={`#${tag.name}`}>#{tag.name}</span>
+                          <span className="text-xs text-zinc-400">{artworkCount} artworks · Explore tag</span>
+                        </div>
+                        {props.onToggleFollowTag && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              props.onToggleFollowTag!(tag.name, e);
+                            }}
+                            className={`p-2 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+                              isFollowed
+                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30"
+                                : "bg-white/10 text-zinc-400 hover:text-white hover:bg-white/20"
+                            }`}
+                            title={isFollowed ? `Unfollow #${tag.name}` : `Follow #${tag.name}`}
+                          >
+                            <Star className={`w-3.5 h-3.5 ${isFollowed ? "fill-amber-400 text-amber-400" : ""}`} />
+                            <span className="hidden sm:inline">{isFollowed ? "Following" : "Follow"}</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>}
             </section>
           )}

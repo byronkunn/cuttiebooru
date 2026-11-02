@@ -24,6 +24,7 @@ import {
   Hash,
   Search,
   X,
+  Star,
 } from "lucide-react";
 import { Post, User, Comment } from "@/types/cuttiebooru";
 import { TAG_CATEGORIES, getTagCategoryStyle } from "@/lib/tag-taxonomy";
@@ -45,6 +46,7 @@ export default function PostDetailPage() {
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isFollowingCreator, setIsFollowingCreator] = useState(false);
+  const [followedTagNames, setFollowedTagNames] = useState<string[]>([]);
   const [toastMsg, setToastMsg] = useState("");
 
   // Suggest Tag State
@@ -85,9 +87,10 @@ export default function PostDetailPage() {
         setCurrentUser(user);
 
         if (user && postData.post) {
-          const [favRes, followRes] = await Promise.all([
+          const [favRes, followRes, tagFollowsRes] = await Promise.all([
             fetch(`/api/interactions?action=check_favorite&postId=${postData.post.id}`),
             fetch(`/api/interactions?action=check_follow&creatorId=${postData.post.creatorId}`),
+            fetch(`/api/interactions?action=followed_tags`),
           ]);
           if (favRes.ok) {
             const fd = await favRes.json();
@@ -96,6 +99,10 @@ export default function PostDetailPage() {
           if (followRes.ok) {
             const fld = await followRes.json();
             setIsFollowingCreator(!!fld.following);
+          }
+          if (tagFollowsRes.ok) {
+            const tfd = await tagFollowsRes.json();
+            setFollowedTagNames(tfd.followedTags || []);
           }
         }
       }
@@ -232,6 +239,39 @@ export default function PostDetailPage() {
   // Hitting plus automatically tags user to search for that tag
   const handleTagSearchPlus = (tagName: string) => {
     router.push(`/?tags=${encodeURIComponent(tagName)}`);
+  };
+
+  const handleToggleFollowTag = async (tagName: string) => {
+    if (!currentUser) {
+      showToast("Sign in required to follow tags");
+      router.push("/signin");
+      return;
+    }
+    const cleanTag = tagName.toLowerCase().replace(/^#/, "");
+    try {
+      const res = await fetch("/api/interactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "follow_tag", tagName: cleanTag }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFollowedTagNames((prev) =>
+          data.following
+            ? [...prev, data.tagName]
+            : prev.filter((t) => t !== data.tagName)
+        );
+        showToast(
+          data.following
+            ? `Followed tag #${data.tagName}!`
+            : `Unfollowed tag #${data.tagName}.`
+        );
+      } else {
+        showToast(data.error || "Could not update tag follow");
+      }
+    } catch {
+      showToast("Network error updating tag follow");
+    }
   };
 
   if (loading) {
@@ -768,31 +808,44 @@ export default function PostDetailPage() {
                         {catMeta?.label || catId}
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {visibleCatTags.map((pt) => (
-                          <div
-                            key={pt.tag.id}
-                            className={`inline-flex items-center rounded-lg border text-xs font-medium overflow-hidden transition-all ${style.bg} ${style.border} ${style.text}`}
-                          >
-                            <Link
-                              href={`/?tags=${encodeURIComponent(pt.tag.name)}`}
-                              className="px-2 py-0.5 hover:underline"
-                              title={`Search for #${pt.tag.name}`}
+                        {visibleCatTags.map((pt) => {
+                          const isTagFollowed = followedTagNames.includes(pt.tag.name);
+                          return (
+                            <div
+                              key={pt.tag.id}
+                              className={`inline-flex items-center rounded-lg border text-xs font-medium overflow-hidden transition-all ${style.bg} ${style.border} ${style.text}`}
                             >
-                              #{pt.tag.name}
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleTagSearchPlus(pt.tag.name);
-                                showToast(`Added #${pt.tag.name} to search chips!`);
-                              }}
-                              title={`Add #${pt.tag.name} to active search chips`}
-                              className="px-1.5 py-0.5 hover:bg-white/20 border-l border-current/20 transition-colors"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
+                              <Link
+                                href={`/?tags=${encodeURIComponent(pt.tag.name)}`}
+                                className="px-2 py-0.5 hover:underline"
+                                title={`Search for #${pt.tag.name}`}
+                              >
+                                #{pt.tag.name}
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFollowTag(pt.tag.name)}
+                                title={isTagFollowed ? `Unfollow #${pt.tag.name}` : `Follow #${pt.tag.name}`}
+                                className={`px-1.5 py-0.5 hover:bg-white/20 border-l border-current/20 transition-colors ${
+                                  isTagFollowed ? "text-amber-400 bg-amber-500/20" : ""
+                                }`}
+                              >
+                                <Star className={`w-3 h-3 ${isTagFollowed ? "fill-amber-400 text-amber-400" : ""}`} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleTagSearchPlus(pt.tag.name);
+                                  showToast(`Added #${pt.tag.name} to search chips!`);
+                                }}
+                                title={`Add #${pt.tag.name} to active search chips`}
+                                className="px-1.5 py-0.5 hover:bg-white/20 border-l border-current/20 transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
                         {hasMore && (
                           <button
                             type="button"
@@ -985,31 +1038,44 @@ export default function PostDetailPage() {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {filteredCatTags.map((pt) => (
-                          <div
-                            key={pt.tag.id}
-                            className={`inline-flex items-center rounded-xl border text-xs font-semibold overflow-hidden transition-all shadow-sm ${style.bg} ${style.border} ${style.text}`}
-                          >
-                            <Link
-                              href={`/?tags=${encodeURIComponent(pt.tag.name)}`}
-                              className="px-2.5 py-1 hover:underline"
-                              title={`Explore all posts tagged #${pt.tag.name}`}
+                        {filteredCatTags.map((pt) => {
+                          const isTagFollowed = followedTagNames.includes(pt.tag.name);
+                          return (
+                            <div
+                              key={pt.tag.id}
+                              className={`inline-flex items-center rounded-xl border text-xs font-semibold overflow-hidden transition-all shadow-sm ${style.bg} ${style.border} ${style.text}`}
                             >
-                              #{pt.tag.name}
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleTagSearchPlus(pt.tag.name);
-                                showToast(`Added #${pt.tag.name} to search chips!`);
-                              }}
-                              title={`Add #${pt.tag.name} to active search chips`}
-                              className="px-2 py-1 hover:bg-white/20 border-l border-current/20 transition-colors"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
+                              <Link
+                                href={`/?tags=${encodeURIComponent(pt.tag.name)}`}
+                                className="px-2.5 py-1 hover:underline"
+                                title={`Explore all posts tagged #${pt.tag.name}`}
+                              >
+                                #{pt.tag.name}
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFollowTag(pt.tag.name)}
+                                title={isTagFollowed ? `Unfollow #${pt.tag.name}` : `Follow #${pt.tag.name}`}
+                                className={`px-2 py-1 hover:bg-white/20 border-l border-current/20 transition-colors ${
+                                  isTagFollowed ? "text-amber-400 bg-amber-500/20" : ""
+                                }`}
+                              >
+                                <Star className={`w-3.5 h-3.5 ${isTagFollowed ? "fill-amber-400 text-amber-400" : ""}`} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleTagSearchPlus(pt.tag.name);
+                                  showToast(`Added #${pt.tag.name} to search chips!`);
+                                }}
+                                title={`Add #${pt.tag.name} to active search chips`}
+                                className="px-2 py-1 hover:bg-white/20 border-l border-current/20 transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );

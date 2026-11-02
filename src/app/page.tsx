@@ -36,6 +36,7 @@ import {
   Megaphone,
   Edit3,
   Palette,
+  Star,
 } from "lucide-react";
 import {
   AppearanceModal,
@@ -95,6 +96,7 @@ export default function CuttiebooruApp() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [favoritePostIds, setFavoritePostIds] = useState<string[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const [followedTagNames, setFollowedTagNames] = useState<string[]>([]);
   const [allFollows, setAllFollows] = useState<FollowRelation[]>([]);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -432,6 +434,7 @@ export default function CuttiebooruApp() {
           setCollections(data.collections || []);
           setFavoritePostIds(data.userFavoritePostIds || []);
           setFollowingIds(data.userFollowingIds || []);
+          setFollowedTagNames(data.userFollowedTagNames || []);
           setAllFollows(data.allFollows || []);
           setMessages(data.messages || []);
           setNotifications(data.notifications || []);
@@ -727,6 +730,40 @@ export default function CuttiebooruApp() {
         showToast("Unfollowed creator.");
       }
       await loadBootstrap(activeUserId);
+    }
+  };
+
+  const handleToggleFollowTag = async (tagName: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!currentUser) {
+      showToast("Sign in required to follow tags");
+      router.push("/signin");
+      return;
+    }
+    const cleanTag = tagName.toLowerCase().replace(/^#/, "");
+    try {
+      const res = await fetch("/api/interactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "follow_tag", tagName: cleanTag }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFollowedTagNames((prev) =>
+          data.following
+            ? [...prev, data.tagName]
+            : prev.filter((t) => t !== data.tagName)
+        );
+        showToast(
+          data.following
+            ? `Followed tag #${data.tagName}! Posts will appear in your Following feed.`
+            : `Unfollowed tag #${data.tagName}.`
+        );
+      } else {
+        showToast(data.error || "Could not update tag follow");
+      }
+    } catch {
+      showToast("Network error updating tag follow");
     }
   };
 
@@ -2201,6 +2238,7 @@ export default function CuttiebooruApp() {
                       {tags.slice(0, 16).map((tag) => {
                         const isInc = includedTags.includes(tag.name);
                         const isExc = excludedTags.includes(tag.name);
+                        const isTagFollowed = followedTagNames.includes(tag.name);
                         const style = getTagCategoryStyle(tag.category);
                         return (
                           <div
@@ -2215,8 +2253,30 @@ export default function CuttiebooruApp() {
                           >
                             <button
                               type="button"
+                              onClick={(e) => handleToggleFollowTag(tag.name, e)}
+                              title={
+                                isTagFollowed
+                                  ? `Unfollow #${tag.name}`
+                                  : `Follow #${tag.name}`
+                              }
+                              className={`px-1.5 py-1 border-r border-current/20 transition-all ${
+                                isTagFollowed
+                                  ? "text-amber-400 bg-amber-500/20"
+                                  : "opacity-40 hover:opacity-100"
+                              }`}
+                            >
+                              <Star
+                                className={`w-3 h-3 ${
+                                  isTagFollowed
+                                    ? "fill-amber-400 text-amber-400"
+                                    : ""
+                                }`}
+                              />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => toggleIncludeTag(tag.name)}
-                              className="px-2.5 py-1 flex items-center gap-1"
+                              className="px-2 py-1 flex items-center gap-1"
                               title={`Add #${tag.name} to search chips`}
                             >
                               <Plus className="w-3 h-3" />
@@ -2234,6 +2294,43 @@ export default function CuttiebooruApp() {
                         );
                       })}
                     </div>
+
+                    {/* Followed Tags Bar */}
+                    {followedTagNames.length > 0 && (
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1.5 border-t border-white/[0.06]">
+                        <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1 shrink-0 pr-1">
+                          <Star className="w-3 h-3 fill-amber-400" />
+                          Followed Tags ({followedTagNames.length}):
+                        </span>
+                        {followedTagNames.map((tName) => (
+                          <div
+                            key={tName}
+                            className="inline-flex items-center rounded-xl text-xs font-semibold border border-amber-500/40 bg-amber-500/10 text-amber-300 shrink-0"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIncludedTags([tName]);
+                                setExcludedTags([]);
+                                handleApplySearch("", [tName], []);
+                              }}
+                              className="px-2.5 py-1 hover:underline flex items-center gap-1"
+                              title={`Search followed tag #${tName}`}
+                            >
+                              <span>#{tName}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleToggleFollowTag(tName, e)}
+                              title={`Unfollow #${tName}`}
+                              className="px-1.5 py-1 hover:bg-amber-500/30 text-amber-400 hover:text-white border-l border-amber-500/20"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Active Multi-Tag Filter Indicator Pills */}
                     {(includedTags.length > 0 || excludedTags.length > 0) && (
@@ -2482,6 +2579,8 @@ export default function CuttiebooruApp() {
                       setSaveTarget({ post });
                     }}
                     onFollow={handleToggleFollow}
+                    followedTagNames={followedTagNames}
+                    onToggleFollowTag={handleToggleFollowTag}
                   />
 
                   <div className="space-y-4">
@@ -2908,6 +3007,33 @@ export default function CuttiebooruApp() {
                                     {tag._count?.posts ?? tag.usageCount} posts
                                   </span>
                                   <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleFollowTag(tag.name)}
+                                      className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+                                        followedTagNames.includes(tag.name)
+                                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                          : "bg-white/5 text-zinc-300 hover:bg-white/10"
+                                      }`}
+                                      title={
+                                        followedTagNames.includes(tag.name)
+                                          ? `Unfollow #${tag.name}`
+                                          : `Follow #${tag.name}`
+                                      }
+                                    >
+                                      <Star
+                                        className={`w-3 h-3 ${
+                                          followedTagNames.includes(tag.name)
+                                            ? "fill-amber-400 text-amber-400"
+                                            : ""
+                                        }`}
+                                      />
+                                      <span>
+                                        {followedTagNames.includes(tag.name)
+                                          ? "Following"
+                                          : "Follow"}
+                                      </span>
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => toggleIncludeTag(tag.name)}

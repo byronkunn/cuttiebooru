@@ -106,6 +106,50 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (action === "follow_tag") {
+      const rawName = typeof body.tagName === "string" ? body.tagName : "";
+      const tagName = rawName.trim().toLowerCase().replace(/^#/, "");
+      if (!tagName) {
+        return safeJson({ error: "Tag name is required" }, { status: 400 });
+      }
+
+      let tag = await prisma.tag.findUnique({ where: { name: tagName } });
+      if (!tag) {
+        tag = await prisma.tag.create({
+          data: {
+            name: tagName,
+            displayName: tagName
+              .split("_")
+              .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" "),
+            category: "general",
+          },
+        });
+      }
+
+      const existing = await prisma.tagFollow.findUnique({
+        where: {
+          userId_tagId: {
+            userId,
+            tagId: tag.id,
+          },
+        },
+      });
+
+      if (existing) {
+        await prisma.tagFollow.delete({ where: { id: existing.id } });
+        return safeJson({ following: false, tagName: tag.name, tagId: tag.id });
+      } else {
+        await prisma.tagFollow.create({
+          data: {
+            userId,
+            tagId: tag.id,
+          },
+        });
+        return safeJson({ following: true, tagName: tag.name, tagId: tag.id });
+      }
+    }
+
     if (action === "create_collection") {
       const {
         title,
@@ -271,5 +315,60 @@ export async function POST(req: NextRequest) {
       { error: "Interaction failed" },
       { status: 500 }
     );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getSessionUser(req);
+    const userId = user?.id || null;
+    const { searchParams } = new URL(req.url);
+    const action = searchParams.get("action");
+
+    if (action === "check_favorite") {
+      const postId = searchParams.get("postId");
+      if (!userId || !postId) return safeJson({ favorited: false });
+      const fav = await prisma.favorite.findUnique({
+        where: { userId_postId: { userId, postId } },
+      });
+      return safeJson({ favorited: Boolean(fav) });
+    }
+
+    if (action === "check_follow") {
+      const creatorId = searchParams.get("creatorId");
+      if (!userId || !creatorId) return safeJson({ following: false });
+      const follow = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: { followerId: userId, followingId: creatorId },
+        },
+      });
+      return safeJson({ following: Boolean(follow?.approved) });
+    }
+
+    if (action === "check_tag_follow") {
+      const tagName = (searchParams.get("tagName") || "").trim().toLowerCase().replace(/^#/, "");
+      if (!userId || !tagName) return safeJson({ following: false });
+      const tag = await prisma.tag.findUnique({ where: { name: tagName } });
+      if (!tag) return safeJson({ following: false });
+      const tf = await prisma.tagFollow.findUnique({
+        where: { userId_tagId: { userId, tagId: tag.id } },
+      });
+      return safeJson({ following: Boolean(tf) });
+    }
+
+    if (action === "followed_tags") {
+      if (!userId) return safeJson({ followedTags: [] });
+      const tagFollows = await prisma.tagFollow.findMany({
+        where: { userId },
+        include: { tag: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return safeJson({ followedTags: tagFollows.map((tf) => tf.tag.name) });
+    }
+
+    return safeJson({ error: "Unknown action" }, { status: 400 });
+  } catch (error) {
+    console.error("GET /api/interactions error:", error);
+    return safeJson({ error: "Failed to load interaction state" }, { status: 500 });
   }
 }
