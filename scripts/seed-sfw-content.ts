@@ -598,7 +598,158 @@ async function main() {
     },
   });
 
-  console.log("Successfully seeded 4 accounts and populated site with rich SFW media!");
+  // Seed direct messages from Sakura, Luna, and Hana to Admin Byron
+  const now = Date.now();
+  await prisma.directMessage.deleteMany({});
+  await prisma.notification.deleteMany({ where: { type: "message" } });
+
+  const m1_sakura = await prisma.directMessage.create({
+    data: {
+      senderId: userSakura.id,
+      receiverId: userByron.id,
+      text: "Hey Byron! The new Booru layout and theme switcher are awesome! I just finished organizing the Enchanted Starlight Chronicles album.",
+      isRead: true,
+      createdAt: new Date(now - 1000 * 60 * 120),
+    },
+  });
+  const m2_sakura = await prisma.directMessage.create({
+    data: {
+      senderId: userSakura.id,
+      receiverId: userByron.id,
+      text: "Quick question: what video aspect ratio works best for loop animations on the mobile feed? Planning the next scene now!",
+      isRead: true,
+      createdAt: new Date(now - 1000 * 60 * 60),
+    },
+  });
+  const m_byron_reply1 = await prisma.directMessage.create({
+    data: {
+      senderId: userByron.id,
+      receiverId: userSakura.id,
+      text: "Hey Sakura! 4:5 or 1:1 works best for feed thumbnails, and 9:16 vertical looks incredible when opened fullscreen. Excited to see what you create next!",
+      isRead: true,
+      replyToId: m2_sakura.id,
+      createdAt: new Date(now - 1000 * 60 * 30),
+    },
+  });
+  await prisma.directMessage.create({
+    data: {
+      senderId: userSakura.id,
+      receiverId: userByron.id,
+      text: "Perfect, thanks! I'll render the next batch in 4:5 then. Really appreciate your help with the creator setup!",
+      isRead: false,
+      replyToId: m_byron_reply1.id,
+      createdAt: new Date(now - 1000 * 60 * 10),
+    },
+  });
+
+  const m1_luna = await prisma.directMessage.create({
+    data: {
+      senderId: userLuna.id,
+      receiverId: userByron.id,
+      text: "Hi Admin Byron! Thank you so much for featuring my cosplay work in the Heroines & Cosplay Showcase album! The presentation looks super sleek.",
+      isRead: true,
+      createdAt: new Date(now - 1000 * 60 * 180),
+    },
+  });
+  const m2_luna = await prisma.directMessage.create({
+    data: {
+      senderId: userLuna.id,
+      receiverId: userByron.id,
+      text: "I'm setting up a new Cyberpunk studio shoot next week. If you ever need high-res assets or featured photos for site promo banners, just let me know!",
+      isRead: true,
+      createdAt: new Date(now - 1000 * 60 * 120),
+    },
+  });
+  const m_byron_reply2 = await prisma.directMessage.create({
+    data: {
+      senderId: userByron.id,
+      receiverId: userLuna.id,
+      text: "Hey Luna! Your props and lighting are top tier. Cyberpunk always trends really well with our community—feel free to upload full resolution whenever you're ready!",
+      isRead: true,
+      replyToId: m2_luna.id,
+      createdAt: new Date(now - 1000 * 60 * 60),
+    },
+  });
+  await prisma.directMessage.create({
+    data: {
+      senderId: userLuna.id,
+      receiverId: userByron.id,
+      text: "Will do! I'll make sure to add all the proper booru tags like #cyberpunk, #cosplay, and #props.",
+      isRead: false,
+      replyToId: m_byron_reply2.id,
+      createdAt: new Date(now - 1000 * 60 * 20),
+    },
+  });
+
+  const m1_hana = await prisma.directMessage.create({
+    data: {
+      senderId: userHana.id,
+      receiverId: userByron.id,
+      text: "Hello Byron! I published the first 2 chapters of 'Whispers of the Cherry Grove' on the Manga Reader. The right-to-left reader direction works like a charm!",
+      isRead: true,
+      createdAt: new Date(now - 1000 * 60 * 240),
+    },
+  });
+  const m2_hana = await prisma.directMessage.create({
+    data: {
+      senderId: userHana.id,
+      receiverId: userByron.id,
+      text: "Could you check if the cover art looks crisp on the homepage? Also wondering if creators will have the ability to schedule chapter drops in advance?",
+      isRead: true,
+      createdAt: new Date(now - 1000 * 60 * 120),
+    },
+  });
+  const m_byron_reply3 = await prisma.directMessage.create({
+    data: {
+      senderId: userByron.id,
+      receiverId: userHana.id,
+      text: "Hi Hana! The cover looks gorgeous, and chapter 2 loaded smoothly on all devices. Scheduling is definitely on the roadmap for the studio tools!",
+      isRead: true,
+      replyToId: m2_hana.id,
+      createdAt: new Date(now - 1000 * 60 * 50),
+    },
+  });
+  await prisma.directMessage.create({
+    data: {
+      senderId: userHana.id,
+      receiverId: userByron.id,
+      text: "That's wonderful to hear! Thank you for building such a great home for independent creators and artists.",
+      isRead: false,
+      replyToId: m_byron_reply3.id,
+      createdAt: new Date(now - 1000 * 60 * 15),
+    },
+  });
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        recipientId: userByron.id,
+        actorId: userSakura.id,
+        type: "message",
+        text: "sent you a direct message",
+        isRead: false,
+        createdAt: new Date(now - 1000 * 60 * 10),
+      },
+      {
+        recipientId: userByron.id,
+        actorId: userLuna.id,
+        type: "message",
+        text: "sent you a direct message",
+        isRead: false,
+        createdAt: new Date(now - 1000 * 60 * 20),
+      },
+      {
+        recipientId: userByron.id,
+        actorId: userHana.id,
+        type: "message",
+        text: "sent you a direct message",
+        isRead: false,
+        createdAt: new Date(now - 1000 * 60 * 15),
+      },
+    ],
+  });
+
+  console.log("Successfully seeded 4 accounts and populated site with rich SFW media and creator messages!");
 }
 
 main()
