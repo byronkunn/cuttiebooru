@@ -134,7 +134,7 @@ body.theme-sakura :is(.text-zinc-400, .text-zinc-500, .text-slate-400) {
   color: var(--text-muted);
 }
 
-body.theme-sakura :is([class*="border-white/"], [class*="border-white["]) {
+body.theme-sakura :is([class*="border-white/"], [class*="border-white"]) {
   border-color: #d8cfe1;
 }
 
